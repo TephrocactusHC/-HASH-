@@ -1,54 +1,65 @@
-'''
-#coding : utf-8
-#@Time : 2021/10/723:48
-#@Author : myc
-#@File : 5yery.py
-#@Software : PyCharm
+import os
 import hashlib
-f = open(r'D:\Thursday\demo1\停词表.txt','rb')
-fr = f.read()
-sha256obj = hashlib.sha256(fr).hexdigest()
-md5obj = hashlib.md5(fr).hexdigest()
-f.close()
-result = open(r'D:\Thursday\demo1\result.txt','a')
-result.write(md5obj+'\n'+sha256obj+'\n')
-result.close()
-'''
+import functools
 
-#coding : utf-8
-#@Time : 2021/10/723:48
-#@Author : myc
-#@File : 5yery.py
-#@Software : PyCharm
+#输出文件的存储路径
+def savepath():
+    global savepath
+    savepath=input('please input the target path:')
+    return savepath
 
-import hashlib,os
-# 获取文件的地址
-def GetPath():
-    file_path = input('please input the path:')
-    return file_path
+#判断子文件夹
+def judge(path):
+    if os.path.isdir(path)==True:
+        list_files = os.listdir(path)
+        return list_files
 
-# 生成文件的MD5值
-def file_md5(content):
-    md5gen = hashlib.md5()
-    with open(content, 'rb') as fd:
-        data = fd.read()
-        md5gen.update(data) #通过update方法传入生成器
-        md5code = md5gen.hexdigest()
-        return md5code
+# 合并
+def add(x, y):
+    return x + y
 
-# 生成文件的SHA256值
-def file_sha256(content):
-    sha256gen = hashlib.sha256()
-    with open(content, 'rb') as fd:
-        data = fd.read()
-        sha256gen.update(data)
-        sha256code = sha256gen.hexdigest()
-        return sha256code
+#合成文件路径
+def addpath(file):
+    path = dir_root+'\\'+file
+    return path
+
+#获得文件的绝对路径
+def getpath(path):
+    os.chdir(path)
+    global dir_root
+    dir_root=os.getcwd()
+    list_files=os.listdir(path)
+    list_files=list(map(addpath,list_files))
+    return list_files
+
+def getfile(path):
+    os.chdir(path)
+    list_items = list( map(os.path.abspath,list(os.listdir(path))))
+    list_files = list(filter(os.path.isfile, list_items))
+    if list_files!=None:
+        list(map(compute_hash,list_files))
+    list_dirs = list(filter(os.path.isdir, list_items))
+    if list_dirs!=None:
+        if list(map(judge,list_dirs))!=None:
+            list(map(getfile,list_dirs))
+        else:
+            list_dirs = list(map(getpath, list_dirs))
+            list_dirs = list(functools.reduce(add,list_dirs))
+            list(map(compute_hash,list_dirs))
+
+# 计算文件的md5和sha256值并写入文件
+def compute_hash(file):
+    with open(file,'rb') as f:
+        data = f.read()
+        filepath=os.path.abspath(file)
+        file_md5 = hashlib.md5(data).hexdigest()
+        file_sha256 = hashlib.sha256(data).hexdigest()
+        result = filepath + '     ' + file_md5 + '      ' + file_sha256 + '\n'
+    with open(savepath, 'a') as fp:
+        fp.write(result)
 
 if __name__=='__main__':
-    thePath=GetPath()
-    sha256obj = file_sha256(thePath)
-    md5obj = file_md5(thePath)
-    with open(r'D:\Thursday\demo1\result.txt','a') as result:      #将结果写入新的文件
-        result.write(md5obj+'\n'+sha256obj+'\n')
+    thepath=input('input a path:')
+    savepath()
+    getfile(thepath)
 
